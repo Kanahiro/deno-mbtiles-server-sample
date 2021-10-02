@@ -4,18 +4,10 @@ import { expandGlob } from 'https://deno.land/std@0.109.0/fs/expand_glob.ts';
 import { gunzip } from 'https://deno.land/x/compress@v0.4.1/mod.ts';
 
 // make connections to .MBTiles files in './tiles'
-const mbtilesFileNames = [];
+const connections: { [key: string]: DB } = {};
 for await (const mbtiles of expandGlob('tiles/*.mbtiles')) {
-    mbtilesFileNames.push(mbtiles.name);
+    connections[mbtiles.name.split('.')[0]] = new DB(mbtiles.path);
 }
-type ConnectionDict = { [key: string]: DB };
-const connections = mbtilesFileNames.reduce(
-    (prev: ConnectionDict, cur: string) => ({
-        ...prev,
-        [cur.split('.')[0]]: new DB(`tiles/${cur}`),
-    }),
-    {} as ConnectionDict,
-);
 
 listenAndServe(':8000', (request) => {
     const [tilename, z, x, y] = request.url.split('/').slice(-4);
